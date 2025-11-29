@@ -8,3 +8,4 @@ urlpatterns = [
     path('', SearchCoursesView.as_view(), name='search-courses'),
 ]
 
+

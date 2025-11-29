@@ -32,3 +32,4 @@ class Order(models.Model):
     def __str__(self):
         return f"Order #{self.id} - {self.student.full_name} - {self.course.title} - {self.payment_status}"
 
+

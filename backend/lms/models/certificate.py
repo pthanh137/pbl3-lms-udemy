@@ -32,3 +32,4 @@ class Certificate(models.Model):
         unique_together = ['student', 'course']
         ordering = ['-issued_at']
 
+

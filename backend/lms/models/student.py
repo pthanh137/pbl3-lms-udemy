@@ -8,6 +8,7 @@ class Student(models.Model):
     password = models.CharField(max_length=128)
     mobile_no = models.CharField(max_length=20, blank=True, null=True)
     profile_img = models.ImageField(upload_to='students/', blank=True, null=True)
+    bio = models.TextField(blank=True, null=True, help_text="Mô tả cá nhân")
     created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
@@ -22,6 +23,7 @@ class Student(models.Model):
         verbose_name = 'Student'
         verbose_name_plural = 'Students'
         ordering = ['-created_at']
+
 
 
 

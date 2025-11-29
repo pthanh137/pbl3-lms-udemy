@@ -31,3 +31,4 @@ class CreateOrderSerializer(serializers.Serializer):
 class FakeConfirmSerializer(serializers.Serializer):
     order_id = serializers.IntegerField(required=True)
 
+

@@ -19,3 +19,4 @@ class Quiz(models.Model):
 
 
 
+

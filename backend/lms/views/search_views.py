@@ -126,3 +126,4 @@ class RecommendCoursesView(APIView):
             'count': len(serializer.data)
         }, status=status.HTTP_200_OK)
 
+

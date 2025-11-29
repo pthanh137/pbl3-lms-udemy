@@ -37,3 +37,4 @@ class CertificateDetailSerializer(CertificateSerializer):
             'course_level'
         ]
 
+

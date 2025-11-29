@@ -27,3 +27,4 @@ class MarkNotificationReadSerializer(serializers.Serializer):
     """Serializer for marking notification as read"""
     id = serializers.IntegerField(required=True)
 
+

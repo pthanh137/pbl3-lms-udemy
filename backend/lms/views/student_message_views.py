@@ -41,3 +41,4 @@ class StudentUnreadCountView(APIView):
             'unread_total': total_unread
         }, status=status.HTTP_200_OK)
 
+

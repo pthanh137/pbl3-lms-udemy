@@ -9,3 +9,4 @@ urlpatterns = [
     path('<int:pk>/', StudentCertificateDetailView.as_view(), name='student-certificate-detail'),
 ]
 
+

@@ -43,6 +43,10 @@ urlpatterns = [
     path('auth/teacher/login/', auth_views.TeacherLoginAPIView, name='teacher-login'),
     path('auth/token/refresh/', CustomTokenRefreshView.as_view(), name='token-refresh'),
     
+    # Student profile endpoints
+    path('auth/profile/', auth_views.StudentProfileView, name='student-profile'),
+    path('auth/change-password/', auth_views.StudentChangePasswordView, name='student-change-password'),
+    
     # Teacher endpoints
     path('teacher/profile/', teacher_views.TeacherProfileView, name='teacher-profile'),
     path('teacher/change-password/', teacher_views.TeacherChangePasswordView, name='teacher-change-password'),

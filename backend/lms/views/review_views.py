@@ -256,3 +256,19 @@ class HighlightReviewsView(APIView):
         serializer = ReviewSerializer(reviews, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+
+class HomeReviewsView(APIView):
+    """
+    Get latest reviews for homepage.
+    GET /api/reviews/home/
+    Returns the 10 most recent reviews.
+    """
+    permission_classes = []  # Public endpoint
+
+    def get(self, request):
+        # Get latest 10 reviews, ordered by created_at descending
+        reviews = Review.objects.select_related('course', 'student').order_by('-created_at')[:10]
+        
+        serializer = ReviewSerializer(reviews, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+

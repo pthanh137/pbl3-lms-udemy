@@ -13,3 +13,4 @@ urlpatterns = [
     path('course-performance/', CoursePerformanceView.as_view(), name='course-performance'),
 ]
 
+

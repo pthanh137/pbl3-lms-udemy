@@ -11,22 +11,47 @@ from lms.permissions import IsStudent
 def get_current_student(request):
     """
     Helper function to get the current student from the request.
+    Assumes JWT token contains student_id or email.
     """
+    # Debug logging
+    print(f"DEBUG get_current_student: request.auth = {getattr(request, 'auth', None)}")
+    
     if hasattr(request, 'auth') and request.auth:
+        # Try to get student_id from token
         student_id = request.auth.get('student_id')
+        print(f"DEBUG: student_id from token = {student_id}")
         if student_id:
             try:
-                return Student.objects.get(id=student_id)
+                student = Student.objects.get(id=student_id)
+                print(f"DEBUG: Found student by ID: {student.id} - {student.email}")
+                return student
             except Student.DoesNotExist:
+                print(f"DEBUG: Student with ID {student_id} not found")
                 pass
         
+        # Try to get email from token
         email = request.auth.get('email')
+        print(f"DEBUG: email from token = {email}")
         if email:
             try:
-                return Student.objects.get(email=email)
+                student = Student.objects.get(email=email)
+                print(f"DEBUG: Found student by email: {student.id} - {student.email}")
+                return student
+            except Student.DoesNotExist:
+                print(f"DEBUG: Student with email {email} not found")
+                pass
+    
+    # Fallback: try to get from user if available
+    if hasattr(request, 'user') and request.user and request.user.is_authenticated:
+        if hasattr(request.user, 'email'):
+            try:
+                student = Student.objects.get(email=request.user.email)
+                print(f"DEBUG: Found student from request.user: {student.id} - {student.email}")
+                return student
             except Student.DoesNotExist:
                 pass
     
+    print("DEBUG: No student found")
     return None
 
 
@@ -40,12 +65,20 @@ class CourseReviewCreateView(APIView):
 
     @transaction.atomic
     def post(self, request, course_id):
+        print(f"DEBUG CourseReviewCreateView: Starting post request for course {course_id}")
+        print(f"DEBUG: request.auth = {getattr(request, 'auth', None)}")
+        print(f"DEBUG: IsStudent permission check passed")
+        
         student = get_current_student(request)
         if not student:
+            # Log for debugging
+            print(f"DEBUG: Student not found. request.auth: {getattr(request, 'auth', None)}")
             return Response(
-                {'error': 'Student not found'},
+                {'error': 'Student not found. Please make sure you are logged in as a student.'},
                 status=status.HTTP_404_NOT_FOUND
             )
+        
+        print(f"DEBUG: Student found: {student.id} - {student.email}")
 
         try:
             course = Course.objects.get(id=course_id)
@@ -56,7 +89,18 @@ class CourseReviewCreateView(APIView):
             )
 
         # Check if student is enrolled
-        if not Enrollment.objects.filter(student=student, course=course).exists():
+        enrollment_exists = Enrollment.objects.filter(student=student, course=course).exists()
+        if not enrollment_exists:
+            # Log for debugging
+            print(f"DEBUG: Enrollment check failed. Student ID: {student.id}, Student Email: {student.email}, Course ID: {course_id}")
+            all_enrollments = list(Enrollment.objects.filter(student=student).values_list('course_id', flat=True))
+            print(f"DEBUG: All enrollments for student {student.id}: {all_enrollments}")
+            print(f"DEBUG: Looking for course {course_id} in enrollments: {course_id in all_enrollments}")
+            
+            # Double check with course object
+            enrollment_by_course = Enrollment.objects.filter(student=student, course__id=course_id).exists()
+            print(f"DEBUG: Enrollment check by course object: {enrollment_by_course}")
+            
             return Response(
                 {'error': 'You must be enrolled in this course to leave a review'},
                 status=status.HTTP_403_FORBIDDEN
@@ -152,4 +196,5 @@ class CourseRatingSummaryView(APIView):
             'total_reviews': course.total_reviews or 0,
             'stars': star_counts
         }, status=status.HTTP_200_OK)
+
 

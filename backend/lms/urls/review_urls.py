@@ -5,7 +5,8 @@ from lms.views.review_views import (
     MyReviewView,
     DeleteReviewView,
     RatingSummaryView,
-    HighlightReviewsView
+    HighlightReviewsView,
+    HomeReviewsView
 )
 
 urlpatterns = [
@@ -15,5 +16,6 @@ urlpatterns = [
     path('my/<int:course_id>/', MyReviewView.as_view(), name='my-review'),
     path('delete/<int:course_id>/', DeleteReviewView.as_view(), name='delete-review'),
     path('highlight/', HighlightReviewsView.as_view(), name='highlight-reviews'),
+    path('home/', HomeReviewsView.as_view(), name='home-reviews'),
 ]
 

@@ -95,3 +95,4 @@ class StudentCertificateDetailView(APIView):
         serializer = CertificateDetailSerializer(certificate)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+

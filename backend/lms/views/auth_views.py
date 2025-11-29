@@ -1,12 +1,16 @@
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
-from django.contrib.auth.hashers import check_password
+from django.contrib.auth.hashers import check_password, make_password
 from lms.models import Teacher, Student
 from lms.serializers import TeacherSerializer, StudentSerializer
+from lms.serializers.student_profile_serializer import (
+    StudentProfileSerializer, StudentChangePasswordSerializer
+)
+from lms.permissions import IsStudent
 
 
 @api_view(['POST'])
@@ -153,3 +157,95 @@ class CustomTokenRefreshView(TokenRefreshView):
     Body: { "refresh": "..." }
     """
     pass
+
+
+def get_current_student_from_request(request):
+    """
+    Helper function to get the current student from the request.
+    """
+    if hasattr(request, 'auth') and request.auth:
+        student_id = request.auth.get('student_id')
+        if student_id:
+            try:
+                return Student.objects.get(id=student_id)
+            except Student.DoesNotExist:
+                pass
+        
+        email = request.auth.get('email')
+        if email:
+            try:
+                return Student.objects.get(email=email)
+            except Student.DoesNotExist:
+                pass
+    
+    return None
+
+
+@api_view(['GET', 'PUT', 'PATCH'])
+@permission_classes([IsStudent])
+def StudentProfileView(request):
+    """
+    Get or update student profile.
+    GET /api/auth/profile/
+    PUT/PATCH /api/auth/profile/
+    """
+    student = get_current_student_from_request(request)
+    if not student:
+        return Response(
+            {'error': 'Student not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    if request.method == 'GET':
+        serializer = StudentProfileSerializer(student)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    elif request.method in ['PUT', 'PATCH']:
+        serializer = StudentProfileSerializer(student, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([IsStudent])
+def StudentChangePasswordView(request):
+    """
+    Change student password.
+    POST /api/auth/change-password/
+    Body: {
+        "old_password": "...",
+        "new_password": "..."
+    }
+    """
+    student = get_current_student_from_request(request)
+    if not student:
+        return Response(
+            {'error': 'Student not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    serializer = StudentChangePasswordSerializer(data=request.data)
+    if serializer.is_valid():
+        old_password = serializer.validated_data['old_password']
+        new_password = serializer.validated_data['new_password']
+        
+        # Verify old password
+        if not check_password(old_password, student.password):
+            return Response(
+                {'error': 'Mật khẩu cũ không đúng'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Update password
+        student.password = make_password(new_password)
+        student.save()
+        
+        return Response(
+            {'message': 'Đổi mật khẩu thành công'},
+            status=status.HTTP_200_OK
+        )
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+

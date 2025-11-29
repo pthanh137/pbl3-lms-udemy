@@ -19,3 +19,4 @@ class StudentProgress(models.Model):
         unique_together = ['student', 'lesson']
         ordering = ['-updated_at']
 
+

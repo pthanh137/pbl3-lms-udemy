@@ -14,14 +14,19 @@ class ReviewSerializer(serializers.ModelSerializer):
             'id', 'course', 'student', 'student_id', 'student_name',
             'rating', 'comment', 'created_at', 'updated_at', 'course_title'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'student', 'created_at', 'updated_at']
     
     def get_course(self, obj):
         """Include course info for highlight reviews"""
+        try:
+            thumbnail = obj.course.featured_img.url if obj.course.featured_img else None
+        except (AttributeError, ValueError):
+            thumbnail = None
+        
         return {
             'id': obj.course.id,
             'title': obj.course.title,
-            'thumbnail': obj.course.featured_img.url if obj.course.featured_img else None
+            'thumbnail': thumbnail
         }
 
 

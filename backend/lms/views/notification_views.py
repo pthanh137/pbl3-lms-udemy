@@ -87,3 +87,4 @@ class StudentNotificationUnreadCountView(APIView):
             'unread_total': unread_total
         }, status=status.HTTP_200_OK)
 
+

@@ -29,3 +29,4 @@ class StudentCourseProgress(models.Model):
             models.Index(fields=['student', 'course']),
         ]
 
+
