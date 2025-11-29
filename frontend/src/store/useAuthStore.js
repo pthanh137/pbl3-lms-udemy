@@ -33,6 +33,12 @@ const useAuthStore = create(
           refreshToken: refresh,
         });
       },
+
+      setUser: (userData) => {
+        set({
+          user: userData,
+        });
+      },
     }),
     {
       name: 'auth-storage',

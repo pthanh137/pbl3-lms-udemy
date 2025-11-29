@@ -9,9 +9,11 @@ import { reviewApi } from '../../api/reviewApi';
 import useAuthStore from '../../store/useAuthStore';
 import { showSuccess, showError, showInfo } from '../../utils/toast';
 import { formatPrice } from '../../utils/formatPrice';
+import { getCourseImage } from '../../utils/getCourseImage';
 import SkeletonBlock from '../../components/SkeletonBlock';
 import ReviewModal from '../../components/ReviewModal';
 import StarRating from '../../components/StarRating';
+import './CourseDetail.css';
 
 const CourseDetail = () => {
   const { id } = useParams();
@@ -61,20 +63,32 @@ const CourseDetail = () => {
         return;
       }
       try {
-        const response = await studentApi.getMyCourses();
-        const enrolledCourses = response.data.results || response.data || [];
-        const courseId = parseInt(id);
-        
-        // Fix enrollment check - properly compare course IDs
-        const enrolled = enrolledCourses.some((enrollment) => {
-          const enrollmentCourseId = enrollment.course 
-            ? (typeof enrollment.course === 'object' ? enrollment.course.id : enrollment.course)
-            : enrollment.course_id;
-          
-          return Number(enrollmentCourseId) === Number(courseId);
-        });
-        
-        setIsEnrolled(enrolled);
+        // Method 1: Try to get course content - if enrolled, this will succeed
+        // If not enrolled, it will return 403
+        try {
+          await studentApi.getCourseContent(id);
+          // If we can get course content, we are enrolled
+          setIsEnrolled(true);
+        } catch (contentError) {
+          // If 403, we are not enrolled
+          if (contentError.response?.status === 403) {
+            setIsEnrolled(false);
+          } else {
+            // For other errors, check the list of enrolled courses as fallback
+            const response = await studentApi.getMyCourses();
+            const enrolledCourses = response.data.results || response.data || [];
+            const courseId = parseInt(id);
+            
+            // API returns list of Course objects, not Enrollment objects
+            // So we check if any course.id matches the current course ID
+            const enrolled = enrolledCourses.some((course) => {
+              const courseIdFromList = course.id || course.course_id || course.course?.id;
+              return Number(courseIdFromList) === Number(courseId);
+            });
+            
+            setIsEnrolled(enrolled);
+          }
+        }
       } catch (error) {
         console.error('Error checking enrollment:', error);
         setIsEnrolled(false);
@@ -118,14 +132,15 @@ const CourseDetail = () => {
       // Get all reviews and find the current student's review
       const response = await reviewApi.getCourseReviews(id);
       const allReviews = response.data.reviews || [];
-      // Find review by current student
+      // Find review by current student - compare as numbers to avoid type mismatch
       if (user && user.id) {
-        const myReview = allReviews.find(r => r.student_id === user.id);
+        const myReview = allReviews.find(r => Number(r.student_id) === Number(user.id));
         setMyReview(myReview || null);
       } else {
         setMyReview(null);
       }
     } catch (error) {
+      console.error('Error fetching my review:', error);
       // No review found, that's okay
       setMyReview(null);
     }
@@ -176,16 +191,21 @@ const CourseDetail = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-24 pb-16">
       {/* Hero Section */}
-      <div className="bg-gradient-to-br from-blue-400 via-indigo-400 to-purple-400 text-white py-16">
+      <div 
+        className="course-header-section"
+        style={{
+          backgroundImage: `url('${getCourseImage(id)}')`
+        }}
+      >
         <div className="container mx-auto px-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="max-w-4xl"
+            className="max-w-4xl relative z-10"
           >
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">{course.title}</h1>
-            <p className="text-xl text-gray-100 mb-6">{course.description}</p>
-            <div className="flex flex-wrap gap-6 text-sm">
+            <h1 className="course-title mb-4">{course.title}</h1>
+            <p className="text-xl text-gray-100 mb-6 relative z-10" style={{ textShadow: '0 2px 10px rgba(0, 0, 0, 0.3)' }}>{course.description}</p>
+            <div className="flex flex-wrap gap-6 text-sm relative z-10">
               <div className="flex items-center space-x-2">
                 <FiBook className="text-lg" />
                 <span>{course.level}</span>
@@ -423,16 +443,22 @@ const CourseDetail = () => {
                           )}
                         </div>
                       </div>
-                      {role === 'student' && !checkingEnrollment && isEnrolled && (
-                        <motion.button
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={() => setShowReviewModal(true)}
-                          className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 transition-colors"
-                        >
-                          <FiEdit3 />
-                          {myReview ? 'Chỉnh sửa đánh giá' : 'Viết đánh giá'}
-                        </motion.button>
+                      {role === 'student' && !checkingEnrollment && (
+                        isEnrolled ? (
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => setShowReviewModal(true)}
+                            className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 transition-colors"
+                          >
+                            <FiEdit3 />
+                            {myReview ? 'Chỉnh sửa đánh giá' : 'Viết đánh giá'}
+                          </motion.button>
+                        ) : (
+                          <div className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg text-sm">
+                            Vui lòng đăng ký khóa học để đánh giá
+                          </div>
+                        )
                       )}
                     </div>
 
@@ -467,6 +493,63 @@ const CourseDetail = () => {
                             );
                           })}
                         </div>
+                      </div>
+                    )}
+
+                    {/* Review Form - Always show for students, but disable if not enrolled */}
+                    {role === 'student' && !checkingEnrollment && (
+                      <div className="mb-8 p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+                        <h4 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">
+                          {myReview ? 'Chỉnh sửa đánh giá của bạn' : 'Viết đánh giá'}
+                        </h4>
+                        {!isEnrolled ? (
+                          <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                            <p className="text-yellow-800 dark:text-yellow-300 text-sm">
+                              ⚠️ Bạn cần đăng ký khóa học này trước khi có thể đánh giá.
+                            </p>
+                          </div>
+                        ) : (
+                          <div>
+                            <div className="mb-4">
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Đánh giá của bạn *
+                              </label>
+                              <div className="flex gap-2">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                  <button
+                                    key={star}
+                                    type="button"
+                                    onClick={() => {
+                                      if (isEnrolled) {
+                                        setShowReviewModal(true);
+                                      }
+                                    }}
+                                    className="text-3xl transition-transform hover:scale-110"
+                                  >
+                                    <FiStar
+                                      className={`${
+                                        myReview && star <= myReview.rating
+                                          ? 'text-yellow-400 fill-yellow-400'
+                                          : 'text-gray-300 dark:text-gray-600'
+                                      }`}
+                                    />
+                                  </button>
+                                ))}
+                              </div>
+                              {myReview && (
+                                <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                                  Bạn đã đánh giá {myReview.rating} sao
+                                </p>
+                              )}
+                            </div>
+                            <button
+                              onClick={() => setShowReviewModal(true)}
+                              className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 transition-colors"
+                            >
+                              {myReview ? 'Chỉnh sửa đánh giá' : 'Viết đánh giá'}
+                            </button>
+                          </div>
+                        )}
                       </div>
                     )}
 

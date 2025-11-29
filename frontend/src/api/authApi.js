@@ -1,29 +1,45 @@
-import axios from 'axios';
-
-// Use plain axios for auth endpoints to avoid interceptor issues during login
-const authAxios = axios.create({
-  baseURL: 'http://127.0.0.1:8000/api/',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+import axiosClient from './axiosClient';
 
 export const authApi = {
-  // Student authentication
+  // Student login
+  studentLogin: (credentials) => {
+    return axiosClient.post('auth/student/login/', credentials);
+  },
+
+  // Student register
   studentRegister: (data) => {
-    return authAxios.post('auth/student/register/', data);
+    return axiosClient.post('auth/student/register/', data);
   },
 
-  studentLogin: (data) => {
-    return authAxios.post('auth/student/login/', data);
+  // Teacher login
+  teacherLogin: (credentials) => {
+    return axiosClient.post('auth/teacher/login/', credentials);
   },
 
-  // Teacher authentication
+  // Teacher register
   teacherRegister: (data) => {
-    return authAxios.post('auth/teacher/register/', data);
+    return axiosClient.post('auth/teacher/register/', data);
   },
 
-  teacherLogin: (data) => {
-    return authAxios.post('auth/teacher/login/', data);
+  // Get student profile
+  getProfile: () => {
+    return axiosClient.get('auth/profile/');
+  },
+
+  // Update student profile
+  updateProfile: (data) => {
+    return axiosClient.put('auth/profile/', data, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+
+  // Change password
+  changePassword: (oldPassword, newPassword) => {
+    return axiosClient.post('auth/change-password/', {
+      old_password: oldPassword,
+      new_password: newPassword,
+    });
   },
 };

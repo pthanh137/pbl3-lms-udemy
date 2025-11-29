@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FiUser, FiLogOut, FiMenu, FiX, FiSun, FiMoon, FiSearch, FiMessageCircle } from 'react-icons/fi';
+import { FiUser, FiLogOut, FiMenu, FiX, FiSun, FiMoon, FiSearch, FiMessageCircle, FiSettings, FiLock, FiBell } from 'react-icons/fi';
 import useAuthStore from '../store/useAuthStore';
 import useThemeStore from '../store/useThemeStore';
 import { messageApi } from '../api/messageApi';
@@ -203,7 +203,7 @@ const Header = () => {
                   </div>
                   <span>{user?.full_name || 'Người dùng'}</span>
                 </button>
-                <div className="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                <div className="absolute top-full right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                   <Link
                     to={role === 'student' ? '/student/dashboard' : '/teacher/dashboard'}
                     className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-700 rounded-t-lg"
@@ -223,6 +223,24 @@ const Header = () => {
                       </span>
                     )}
                   </Link>
+                  {role === 'student' && (
+                    <>
+                      <Link
+                        to="/profile"
+                        className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-700"
+                      >
+                        <FiSettings className="text-indigo-600" />
+                        <span>Hồ sơ cá nhân</span>
+                      </Link>
+                      <Link
+                        to="/change-password"
+                        className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-700"
+                      >
+                        <FiLock className="text-indigo-600" />
+                        <span>Đổi mật khẩu</span>
+                      </Link>
+                    </>
+                  )}
                   <button
                     onClick={handleLogout}
                     className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-700 rounded-b-lg"

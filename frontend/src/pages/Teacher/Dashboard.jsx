@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { FiBook, FiUsers, FiTrendingUp, FiPlus } from 'react-icons/fi';
 import { teacherApi } from '../../api/teacherApi';
 import useAuthStore from '../../store/useAuthStore';
-import { getImageUrl } from '../../utils/imageUtils';
+import { getCourseImage } from '../../utils/getCourseImage';
 import SkeletonList from '../../components/SkeletonList';
 
 const TeacherDashboard = () => {
@@ -161,17 +161,17 @@ const TeacherDashboard = () => {
                   whileHover={{ y: -8 }}
                   className="bg-gray-50 dark:bg-gray-700 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden"
                 >
-                  {getImageUrl(course.featured_img) ? (
-                    <img
-                      src={getImageUrl(course.featured_img)}
-                      alt={course.title}
-                      className="w-full h-40 object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-40 bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-                      <FiBook className="text-6xl text-white/50" />
-                    </div>
-                  )}
+                  <div
+                    className="w-full h-40 relative"
+                    style={{
+                      backgroundImage: `url('${getCourseImage(course.id)}')`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      backgroundRepeat: 'no-repeat'
+                    }}
+                  >
+                    <div className="absolute inset-0 bg-black/20"></div>
+                  </div>
                   <div className="p-4">
                     <h3 className="font-semibold text-gray-800 dark:text-white mb-2 line-clamp-2">
                       {course.title}

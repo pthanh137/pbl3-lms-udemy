@@ -13,21 +13,45 @@ const StudentRegister = () => {
     full_name: '',
     email: '',
     password: '',
+    confirm_password: '',
     mobile_no: '',
   });
+  const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (formData.password.length < 6) {
+      newErrors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
+    }
+    
+    if (formData.password !== formData.confirm_password) {
+      newErrors.confirm_password = 'Mật khẩu xác nhận không khớp';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+    
     setLoading(true);
 
     try {
-      await authApi.studentRegister(formData);
-      showSuccess('Registration successful! Please login.');
+      // Remove confirm_password before sending
+      const { confirm_password, ...dataToSend } = formData;
+      await authApi.studentRegister(dataToSend);
+      showSuccess('Đăng ký thành công! Vui lòng đăng nhập.');
       // If course ID exists, redirect to login with course parameter
       if (courseId) {
         navigate(`/student/login?course=${courseId}`);
@@ -35,7 +59,7 @@ const StudentRegister = () => {
         navigate('/student/login');
       }
     } catch (error) {
-      showError(error.response?.data?.error || 'Registration failed');
+      showError(error.response?.data?.error || 'Đăng ký thất bại');
     } finally {
       setLoading(false);
     }
@@ -54,15 +78,15 @@ const StudentRegister = () => {
               <FiUserPlus className="text-white text-2xl" />
             </div>
             <h2 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">
-              Student Register
+              Đăng ký Học viên
             </h2>
-            <p className="text-gray-600 dark:text-gray-400">Create your account to start learning</p>
+            <p className="text-gray-600 dark:text-gray-400">Tạo tài khoản để bắt đầu học tập</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Full Name
+                Họ và tên
               </label>
               <div className="relative">
                 <FiUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -72,7 +96,7 @@ const StudentRegister = () => {
                   value={formData.full_name}
                   onChange={handleChange}
                   className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-lg focus:border-indigo-500 focus:outline-none transition-colors bg-white dark:bg-gray-700 text-gray-800 dark:text-white"
-                  placeholder="Enter your full name"
+                  placeholder="Nhập họ và tên của bạn"
                   required
                 />
               </div>
@@ -80,7 +104,7 @@ const StudentRegister = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Email Address
+                Địa chỉ Email
               </label>
               <div className="relative">
                 <FiMail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -90,7 +114,7 @@ const StudentRegister = () => {
                   value={formData.email}
                   onChange={handleChange}
                   className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-lg focus:border-indigo-500 focus:outline-none transition-colors bg-white dark:bg-gray-700 text-gray-800 dark:text-white"
-                  placeholder="Enter your email"
+                  placeholder="Nhập email của bạn"
                   required
                 />
               </div>
@@ -98,7 +122,7 @@ const StudentRegister = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Password (min 6 characters)
+                Mật khẩu (tối thiểu 6 ký tự)
               </label>
               <div className="relative">
                 <FiLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -107,17 +131,45 @@ const StudentRegister = () => {
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-lg focus:border-indigo-500 focus:outline-none transition-colors bg-white dark:bg-gray-700 text-gray-800 dark:text-white"
-                  placeholder="Enter your password"
+                  className={`w-full pl-10 pr-4 py-3 border-2 rounded-lg focus:outline-none transition-colors bg-white dark:bg-gray-700 text-gray-800 dark:text-white ${
+                    errors.password ? 'border-red-500' : 'border-gray-200 dark:border-gray-700 focus:border-indigo-500'
+                  }`}
+                  placeholder="Nhập mật khẩu của bạn"
                   required
                   minLength={6}
                 />
               </div>
+              {errors.password && (
+                <p className="text-red-500 text-sm mt-1">{errors.password}</p>
+              )}
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Mobile Number (optional)
+                Xác nhận mật khẩu
+              </label>
+              <div className="relative">
+                <FiLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="password"
+                  name="confirm_password"
+                  value={formData.confirm_password}
+                  onChange={handleChange}
+                  className={`w-full pl-10 pr-4 py-3 border-2 rounded-lg focus:outline-none transition-colors bg-white dark:bg-gray-700 text-gray-800 dark:text-white ${
+                    errors.confirm_password ? 'border-red-500' : 'border-gray-200 dark:border-gray-700 focus:border-indigo-500'
+                  }`}
+                  placeholder="Nhập lại mật khẩu của bạn"
+                  required
+                />
+              </div>
+              {errors.confirm_password && (
+                <p className="text-red-500 text-sm mt-1">{errors.confirm_password}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Số điện thoại (tùy chọn)
               </label>
               <div className="relative">
                 <FiPhone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -127,7 +179,7 @@ const StudentRegister = () => {
                   value={formData.mobile_no}
                   onChange={handleChange}
                   className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-lg focus:border-indigo-500 focus:outline-none transition-colors bg-white dark:bg-gray-700 text-gray-800 dark:text-white"
-                  placeholder="Enter your mobile number"
+                  placeholder="Nhập số điện thoại của bạn"
                 />
               </div>
             </div>
@@ -139,17 +191,17 @@ const StudentRegister = () => {
               disabled={loading}
               className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50"
             >
-              {loading ? 'Registering...' : 'Register'}
+              {loading ? 'Đang đăng ký...' : 'Đăng ký'}
             </motion.button>
           </form>
 
           <p className="text-center mt-6 text-gray-600 dark:text-gray-400">
-            Already have an account?{' '}
+            Đã có tài khoản?{' '}
             <Link
               to="/student/login"
               className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
             >
-              Login here
+              Đăng nhập tại đây
             </Link>
           </p>
         </div>

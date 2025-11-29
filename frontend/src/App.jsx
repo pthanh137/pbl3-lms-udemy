@@ -49,6 +49,8 @@ const TeacherMessages = React.lazy(() => import('./pages/Teacher/Messages'));
 const MyCertificates = React.lazy(() => import('./pages/Student/MyCertificates'));
 const CertificateDetail = React.lazy(() => import('./pages/Student/CertificateDetail'));
 const StudentNotifications = React.lazy(() => import('./pages/Student/Notifications'));
+const Profile = React.lazy(() => import('./pages/Profile'));
+const StudentChangePassword = React.lazy(() => import('./pages/ChangePassword'));
 
 function App() {
   const { theme, setTheme } = useThemeStore();
@@ -133,6 +135,27 @@ function App() {
               <Suspense fallback={<SkeletonBlock />}>
                 <StudentRegister />
               </Suspense>
+            }
+          />
+          {/* Student Profile Routes */}
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <Suspense fallback={<SkeletonBlock />}>
+                  <Profile />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/change-password"
+            element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <Suspense fallback={<SkeletonBlock />}>
+                  <StudentChangePassword />
+                </Suspense>
+              </ProtectedRoute>
             }
           />
         </Route>

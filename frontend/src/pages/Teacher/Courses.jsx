@@ -14,6 +14,7 @@ import {
 } from 'react-icons/fi';
 import { teacherApi } from '../../api/teacherApi';
 import { publicApi } from '../../api/publicApi';
+import { getCourseImage } from '../../utils/getCourseImage';
 import Swal from 'sweetalert2';
 
 const Courses = () => {
@@ -166,21 +167,19 @@ const Courses = () => {
                 className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-xl transition-all duration-200"
               >
                 {/* Thumbnail */}
-                <div className="relative h-40 bg-gradient-to-br from-indigo-500 to-purple-600">
-                  {course.featured_img ? (
-                    <img
-                      src={course.featured_img}
-                      alt={course.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="h-full w-full flex items-center justify-center">
-                      <FiBook className="text-6xl text-white opacity-50" />
-                    </div>
-                  )}
-                  <div className="absolute top-3 right-3">
+                <div
+                  className="relative h-40"
+                  style={{
+                    backgroundImage: `url('${getCourseImage(course.id)}')`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat'
+                  }}
+                >
+                  <div className="absolute inset-0 bg-black/20"></div>
+                  <div className="absolute top-3 right-3 z-10">
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${getLevelBadgeColor(
+                      className={`px-3 py-1 rounded-full text-xs font-semibold bg-white/90 backdrop-blur-sm ${getLevelBadgeColor(
                         course.level
                       )}`}
                     >

@@ -20,3 +20,4 @@ export const getImageUrl = (imagePath) => {
   return `${baseUrl}${path}`;
 };
 
+

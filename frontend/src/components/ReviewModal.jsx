@@ -26,7 +26,8 @@ const ReviewModal = ({ isOpen, onClose, courseId, onReviewSubmitted }) => {
       const response = await reviewApi.getCourseReviews(courseId);
       const allReviews = response.data.reviews || [];
       if (user && user.id) {
-        const myReview = allReviews.find(r => r.student_id === user.id);
+        // Compare as numbers to avoid type mismatch
+        const myReview = allReviews.find(r => Number(r.student_id) === Number(user.id));
         if (myReview) {
           setRating(myReview.rating);
           setComment(myReview.comment || '');
@@ -106,7 +107,7 @@ const ReviewModal = ({ isOpen, onClose, courseId, onReviewSubmitted }) => {
           {/* Header */}
           <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-6 flex items-center justify-between">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Write a Review
+              Viết đánh giá
             </h2>
             <button
               onClick={onClose}
@@ -121,14 +122,14 @@ const ReviewModal = ({ isOpen, onClose, courseId, onReviewSubmitted }) => {
             {loadingReview ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-                <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+                <p className="text-gray-600 dark:text-gray-400">Đang tải...</p>
               </div>
             ) : (
               <>
                 {/* Rating Stars */}
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                    Your Rating *
+                    Đánh giá của bạn *
                   </label>
                 <div className="flex gap-2">
                   {[1, 2, 3, 4, 5].map((star) => (
@@ -152,11 +153,11 @@ const ReviewModal = ({ isOpen, onClose, courseId, onReviewSubmitted }) => {
                 </div>
                 {rating > 0 && (
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                    {rating === 1 && 'Poor'}
-                    {rating === 2 && 'Fair'}
-                    {rating === 3 && 'Good'}
-                    {rating === 4 && 'Very Good'}
-                    {rating === 5 && 'Excellent'}
+                    {rating === 1 && 'Rất tệ'}
+                    {rating === 2 && 'Tệ'}
+                    {rating === 3 && 'Tốt'}
+                    {rating === 4 && 'Rất tốt'}
+                    {rating === 5 && 'Xuất sắc'}
                   </p>
                 )}
               </div>
@@ -164,17 +165,17 @@ const ReviewModal = ({ isOpen, onClose, courseId, onReviewSubmitted }) => {
               {/* Comment */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Your Review (Optional)
+                  Bình luận của bạn (Tùy chọn)
                 </label>
                 <textarea
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                   rows={6}
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none"
-                  placeholder="Share your thoughts about this course..."
+                  placeholder="Chia sẻ suy nghĩ của bạn về khóa học này..."
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  {comment.length} characters
+                  {comment.length} ký tự
                 </p>
               </div>
 
@@ -189,7 +190,7 @@ const ReviewModal = ({ isOpen, onClose, courseId, onReviewSubmitted }) => {
                     disabled={loading}
                     className="px-6 py-3 border border-red-300 dark:border-red-600 text-red-600 dark:text-red-400 rounded-xl font-semibold hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
                   >
-                    Delete Review
+                    Xóa đánh giá
                   </motion.button>
                 )}
                 <div className="flex-1 flex gap-4">
@@ -201,7 +202,7 @@ const ReviewModal = ({ isOpen, onClose, courseId, onReviewSubmitted }) => {
                     disabled={loading}
                     className="flex-1 px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
                   >
-                    Cancel
+                    Hủy
                   </motion.button>
                   <motion.button
                     type="submit"
@@ -210,7 +211,7 @@ const ReviewModal = ({ isOpen, onClose, courseId, onReviewSubmitted }) => {
                     disabled={loading || rating === 0}
                     className="flex-1 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {loading ? 'Submitting...' : 'Submit Review'}
+                    {loading ? 'Đang gửi...' : 'Gửi đánh giá'}
                   </motion.button>
                 </div>
               </div>

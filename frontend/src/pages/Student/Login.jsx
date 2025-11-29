@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiLogIn, FiMail, FiLock } from 'react-icons/fi';
@@ -15,7 +15,17 @@ const StudentLogin = () => {
     email: '',
     password: '',
   });
+  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // Load saved email if remember me was checked
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('student_remember_email');
+    if (savedEmail) {
+      setFormData(prev => ({ ...prev, email: savedEmail }));
+      setRememberMe(true);
+    }
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -40,7 +50,14 @@ const StudentLogin = () => {
         response.data.student
       );
 
-      showSuccess('Login successful!');
+      // Handle remember me
+      if (rememberMe) {
+        localStorage.setItem('student_remember_email', formData.email);
+      } else {
+        localStorage.removeItem('student_remember_email');
+      }
+
+      showSuccess('Đăng nhập thành công!');
       
       // Small delay to ensure state is persisted
       setTimeout(async () => {
@@ -79,14 +96,14 @@ const StudentLogin = () => {
             <div className="w-16 h-16 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
               <FiLogIn className="text-white text-2xl" />
             </div>
-            <h2 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">Student Login</h2>
-            <p className="text-gray-600 dark:text-gray-400">Welcome back! Please login to continue</p>
+            <h2 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">Đăng nhập Học viên</h2>
+            <p className="text-gray-600 dark:text-gray-400">Chào mừng trở lại! Vui lòng đăng nhập để tiếp tục</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Email Address
+                Địa chỉ Email
               </label>
               <div className="relative">
                 <FiMail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -96,7 +113,7 @@ const StudentLogin = () => {
                   value={formData.email}
                   onChange={handleChange}
                   className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-lg focus:border-indigo-500 focus:outline-none transition-colors bg-white dark:bg-gray-700 text-gray-800 dark:text-white"
-                  placeholder="Enter your email"
+                  placeholder="Nhập email của bạn"
                   required
                 />
               </div>
@@ -104,7 +121,7 @@ const StudentLogin = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Password
+                Mật khẩu
               </label>
               <div className="relative">
                 <FiLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -114,10 +131,23 @@ const StudentLogin = () => {
                   value={formData.password}
                   onChange={handleChange}
                   className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-lg focus:border-indigo-500 focus:outline-none transition-colors bg-white dark:bg-gray-700 text-gray-800 dark:text-white"
-                  placeholder="Enter your password"
+                  placeholder="Nhập mật khẩu của bạn"
                   required
                 />
               </div>
+            </div>
+
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="rememberMe"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+              />
+              <label htmlFor="rememberMe" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                Ghi nhớ đăng nhập
+              </label>
             </div>
 
             <motion.button
@@ -127,17 +157,17 @@ const StudentLogin = () => {
               disabled={loading}
               className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50"
             >
-              {loading ? 'Logging in...' : 'Login'}
+              {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
             </motion.button>
           </form>
 
           <p className="text-center mt-6 text-gray-600 dark:text-gray-400">
-            Don't have an account?{' '}
+            Chưa có tài khoản?{' '}
             <Link
               to="/student/register"
               className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
             >
-              Register here
+              Đăng ký tại đây
             </Link>
           </p>
         </div>

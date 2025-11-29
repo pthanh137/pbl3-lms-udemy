@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiBook, FiPlay } from 'react-icons/fi';
 import { studentApi } from '../../api/studentApi';
-import { getImageUrl } from '../../utils/imageUtils';
+import { getCourseImage } from '../../utils/getCourseImage';
 import SkeletonCard from '../../components/SkeletonCard';
 
 const MyCourses = () => {
@@ -46,79 +46,78 @@ const MyCourses = () => {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h1 className="text-4xl font-bold text-gray-800 dark:text-white mb-2">My Courses</h1>
-          <p className="text-gray-600 dark:text-gray-400">Continue your learning journey</p>
+          <h1 className="text-4xl font-bold text-gray-800 dark:text-white mb-2">Khóa học của tôi</h1>
+          <p className="text-gray-600 dark:text-gray-400">Tiếp tục hành trình học tập của bạn</p>
         </motion.div>
 
         {courses.length === 0 ? (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-12 text-center">
             <FiBook className="text-6xl text-gray-300 dark:text-gray-600 mx-auto mb-4" />
             <p className="text-gray-500 dark:text-gray-400 text-lg mb-6">
-              You haven't enrolled in any courses yet.
+              Bạn chưa đăng ký khóa học nào.
             </p>
             <Link
               to="/courses"
               className="inline-block bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-200"
             >
-              Browse Courses
+              Xem khóa học
             </Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {courses.map((course, index) => (
+            {courses.map((course, index) => {
+              // Handle both course object and nested course structure
+              const courseData = course.course || course;
+              const courseId = courseData.id || course.id;
+              const courseTitle = courseData.title || course.title;
+              const courseDescription = courseData.description || course.description;
+              const courseLevel = courseData.level || course.level;
+              
+              return (
               <motion.div
-                key={course.id}
+                key={courseId}
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
                 whileHover={{ y: -8 }}
                 className="bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group"
               >
-                {getImageUrl(course.featured_img) ? (
-                  <div className="relative h-48 overflow-hidden">
-                    <img
-                      src={getImageUrl(course.featured_img)}
-                      alt={course.title}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                    <div className="absolute bottom-4 left-4 right-4">
-                      <div className="flex items-center justify-between text-white">
-                        <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold">
-                          {course.level}
-                        </span>
-                      </div>
+                <div
+                  className="relative h-48 overflow-hidden"
+                  style={{
+                    backgroundImage: `url('${getCourseImage(courseId)}')`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat'
+                  }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                  <div className="absolute bottom-4 left-4 right-4">
+                    <div className="flex items-center justify-between text-white">
+                      <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold">
+                        {courseLevel}
+                      </span>
                     </div>
                   </div>
-                ) : (
-                  <div className="relative h-48 bg-gradient-to-br from-indigo-500 to-purple-600 overflow-hidden flex items-center justify-center">
-                    <FiBook className="text-6xl text-white/50" />
-                    <div className="absolute bottom-4 left-4 right-4">
-                      <div className="flex items-center justify-between text-white">
-                        <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold">
-                          {course.level}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                </div>
                 <div className="p-6">
                   <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2 line-clamp-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                    {course.title}
+                    {courseTitle}
                   </h3>
                   <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-2">
-                    {course.description}
+                    {courseDescription}
                   </p>
                   <Link
-                    to={`/student/course/${course.id}/content`}
+                    to={`/student/course/${courseId}/content`}
                     className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center justify-center space-x-2"
                   >
                     <FiPlay />
-                    <span>Continue Learning</span>
+                    <span>Tiếp tục học</span>
                   </Link>
                 </div>
               </motion.div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

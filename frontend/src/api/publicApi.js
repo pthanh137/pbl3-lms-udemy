@@ -27,6 +27,11 @@ export const publicApi = {
   getTeachers: (params = {}) => {
     return axiosClient.get('public/teachers/', { params });
   },
+
+  // Homepage Reviews
+  getHomepageReviews: () => {
+    return axiosClient.get('reviews/home/');
+  },
 };
 
 

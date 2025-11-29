@@ -5,7 +5,7 @@ import { FiBook, FiTrendingUp, FiUser, FiAward } from 'react-icons/fi';
 import { studentApi } from '../../api/studentApi';
 import { certificateApi } from '../../api/certificateApi';
 import useAuthStore from '../../store/useAuthStore';
-import { getImageUrl } from '../../utils/imageUtils';
+import { getCourseImage } from '../../utils/getCourseImage';
 import SkeletonList from '../../components/SkeletonList';
 
 const StudentDashboard = () => {
@@ -184,17 +184,17 @@ const StudentDashboard = () => {
                       transition={{ delay: index * 0.1 }}
                       className="flex items-center space-x-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
                     >
-                      {getImageUrl(courseImage) ? (
-                        <img
-                          src={getImageUrl(courseImage)}
-                          alt={courseTitle}
-                          className="w-20 h-20 object-cover rounded-lg"
-                        />
-                      ) : (
-                        <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
-                          <FiBook className="text-white text-2xl" />
-                        </div>
-                      )}
+                      <div
+                        className="w-20 h-20 rounded-lg relative overflow-hidden flex-shrink-0"
+                        style={{
+                          backgroundImage: `url('${getCourseImage(courseId)}')`,
+                          backgroundSize: 'cover',
+                          backgroundPosition: 'center',
+                          backgroundRepeat: 'no-repeat'
+                        }}
+                      >
+                        <div className="absolute inset-0 bg-black/20"></div>
+                      </div>
                       <div className="flex-1">
                         <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
                           {courseTitle}

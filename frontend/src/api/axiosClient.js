@@ -24,18 +24,37 @@ const isPublicEndpoint = (url) => {
   // Remove leading/trailing slashes for comparison
   normalizedUrl = normalizedUrl.replace(/^\/+|\/+$/g, '');
   
+  // Special handling FIRST: courses/{id}/review/ (POST) requires authentication
+  // This must be checked BEFORE checking if it starts with 'courses'
+  // Check for exact pattern: courses/{number}/review/ (not /reviews/)
+  const reviewPostPattern = /^courses\/\d+\/review\/?$/;
+  if (reviewPostPattern.test(normalizedUrl)) {
+    // This is a POST/PUT/DELETE review endpoint, requires auth
+    console.log('🔐 Review POST endpoint detected (requires auth):', normalizedUrl);
+    return false;
+  }
+  
   const publicEndpoints = [
     'categories',
-    'courses',
+    'courses',  // Public GET endpoints for courses
     'auth/student/login',
     'auth/teacher/login',
     'auth/student/register',
     'auth/teacher/register',
+    'reviews/highlight', // Public endpoint for homepage highlight reviews
+    'reviews/home',      // Public endpoint for homepage latest reviews
   ];
   
   // Check if normalized URL starts with any public endpoint
   const isPublic = publicEndpoints.some(endpoint => {
     // Match: categories, categories/, categories/123/, etc.
+    // But exclude courses/{id}/review/ (POST endpoint)
+    if (endpoint === 'courses') {
+      // If it's a review POST endpoint, it's not public
+      if (reviewPostPattern.test(normalizedUrl)) {
+        return false;
+      }
+    }
     return normalizedUrl === endpoint || normalizedUrl.startsWith(endpoint + '/');
   });
   
@@ -49,6 +68,13 @@ axiosClient.interceptors.request.use(
     if (config.data instanceof FormData) {
       delete config.headers['Content-Type'];
     }
+    
+    // Normalize URL for debugging
+    let normalizedUrl = config.url || '';
+    if (normalizedUrl.includes('http://') || normalizedUrl.includes('https://')) {
+      normalizedUrl = normalizedUrl.replace(/^https?:\/\/[^\/]+/, '').replace(/^\/api\//, '');
+    }
+    normalizedUrl = normalizedUrl.replace(/^\/+|\/+$/g, '');
     
     const isPublic = isPublicEndpoint(config.url);
     
@@ -82,6 +108,37 @@ axiosClient.interceptors.request.use(
         tokenPreview: accessToken ? accessToken.substring(0, 20) + '...' : 'null',
         willAddAuth: !isPublic,
         authHeader: config.headers.Authorization ? 'Bearer ***' : 'none'
+      });
+    }
+    
+    // ALWAYS add token for review POST endpoints, regardless of isPublic check
+    if (config.url?.includes('/review/') && !config.url?.includes('/reviews/') && config.method?.toUpperCase() === 'POST') {
+      const { accessToken } = useAuthStore.getState();
+      console.log('🔐 Review POST endpoint - Force adding token:', {
+        url: config.url,
+        method: config.method,
+        hasToken: !!accessToken,
+        tokenPreview: accessToken ? accessToken.substring(0, 30) + '...' : 'null',
+        isPublic: isPublic
+      });
+      
+      if (accessToken) {
+        config.headers.Authorization = `Bearer ${accessToken}`;
+        console.log('✅ Token added to review request');
+      } else {
+        console.error('❌ No access token found for review request!');
+        console.error('Auth store state:', useAuthStore.getState());
+      }
+      return config; // Return early, don't process further
+    }
+    
+    // Debug log for review endpoints BEFORE checking isPublic
+    if (config.url?.includes('/review/') && !config.url?.includes('/reviews/')) {
+      console.log('🔍 Review endpoint check:', {
+        originalUrl: config.url,
+        normalizedUrl: normalizedUrl,
+        isPublic: isPublic,
+        method: config.method
       });
     }
     

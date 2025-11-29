@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { FiUsers, FiEye, FiBook } from 'react-icons/fi';
 import { formatPrice } from '../../utils/formatPrice';
 import { getImageUrl } from '../../utils/imageUtils';
+import { getCourseImage } from '../../utils/getCourseImage';
 import StarRating from '../StarRating';
 
 const PopularCourses = ({ courses }) => {
@@ -48,15 +49,19 @@ const PopularCourses = ({ courses }) => {
               >
                 {/* Thumbnail */}
                 <Link to={`/course/${course.id}`}>
-                  <div className="relative h-48 bg-gradient-to-br from-indigo-500 to-purple-600 overflow-hidden">
-                    {getImageUrl(course.featured_img) ? (
-                      <img
-                        src={getImageUrl(course.featured_img)}
-                        alt={course.title}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
+                  <div 
+                    className="relative h-48 overflow-hidden"
+                    style={{
+                      backgroundImage: `url('${getCourseImage(course.id)}')`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      backgroundRepeat: 'no-repeat'
+                    }}
+                  >
+                    {/* Dark overlay nhẹ để text dễ đọc */}
+                    <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-all duration-500"></div>
+                    {!getImageUrl(course.featured_img) && (
+                      <div className="w-full h-full flex items-center justify-center relative z-10">
                         <FiBook className="text-6xl text-white/50" />
                       </div>
                     )}

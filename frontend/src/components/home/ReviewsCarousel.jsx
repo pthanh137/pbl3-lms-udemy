@@ -1,23 +1,62 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
-import { reviewApi } from '../../api/reviewApi';
+import { useState, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Autoplay, Navigation } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/navigation';
+import { publicApi } from '../../api/publicApi';
 import SkeletonCard from '../SkeletonCard';
 import StarRating from '../StarRating';
+import { formatDistanceToNow } from 'date-fns';
+import { vi } from 'date-fns/locale';
+import './ReviewsCarousel.css';
 
 const ReviewsCarousel = () => {
   const [reviews, setReviews] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  const swiperRef = useRef(null);
 
   useEffect(() => {
     const fetchLatestReviews = async () => {
       try {
-        const response = await reviewApi.getHighlightReviews();
-        setReviews(response.data || []);
+        const response = await publicApi.getHomepageReviews();
+        const fetchedReviews = response.data || [];
+        
+        // Đảm bảo có đủ reviews để loop mượt
+        // Nếu chỉ có 1 review, duplicate thành 6 để đảm bảo loop mượt
+        // Nếu có 2 reviews, duplicate mỗi cái 2 lần để có 6 reviews
+        // Nếu có >= 3 reviews, chỉ lấy reviews thật (không duplicate)
+        if (fetchedReviews.length === 1) {
+          const singleReview = fetchedReviews[0];
+          setReviews([
+            { ...singleReview, id: `${singleReview.id}-dup-1` },
+            { ...singleReview, id: `${singleReview.id}-dup-2` },
+            { ...singleReview, id: `${singleReview.id}-dup-3` },
+            { ...singleReview, id: `${singleReview.id}-dup-4` },
+            { ...singleReview, id: `${singleReview.id}-dup-5` },
+            { ...singleReview, id: `${singleReview.id}-dup-6` }
+          ]);
+        } else if (fetchedReviews.length === 2) {
+          // Duplicate mỗi review 2 lần để có 6 reviews (đủ để loop mượt)
+          const duplicated = [
+            ...fetchedReviews,
+            { ...fetchedReviews[0], id: `${fetchedReviews[0].id}-dup-1` },
+            { ...fetchedReviews[1], id: `${fetchedReviews[1].id}-dup-1` },
+            { ...fetchedReviews[0], id: `${fetchedReviews[0].id}-dup-2` },
+            { ...fetchedReviews[1], id: `${fetchedReviews[1].id}-dup-2` }
+          ];
+          setReviews(duplicated);
+        } else if (fetchedReviews.length >= 3) {
+          // Chỉ lấy reviews thật, loại bỏ các duplicate (nếu có)
+          const realReviews = fetchedReviews.filter(review => 
+            !review.id || !review.id.toString().includes('-dup-')
+          );
+          setReviews(realReviews);
+        } else {
+          setReviews([]);
+        }
       } catch (error) {
-        console.error('Error fetching highlight reviews:', error);
-        // Fallback to empty array if API fails
+        console.error('Error fetching homepage reviews:', error);
         setReviews([]);
       } finally {
         setLoading(false);
@@ -27,24 +66,9 @@ const ReviewsCarousel = () => {
     fetchLatestReviews();
   }, []);
 
-  useEffect(() => {
-    if (reviews.length === 0) return;
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % reviews.length);
-    }, 4000);
-    return () => clearInterval(interval);
-  }, [reviews.length]);
-
-  const goToPrevious = () => {
-    setCurrentIndex((prev) => (prev - 1 + reviews.length) % reviews.length);
-  };
-
-  const goToNext = () => {
-    setCurrentIndex((prev) => (prev + 1) % reviews.length);
-  };
-
 
   const getInitials = (name) => {
+    if (!name) return 'U';
     return name
       .split(' ')
       .map((n) => n[0])
@@ -67,12 +91,6 @@ const ReviewsCarousel = () => {
     );
   }
 
-  // Show section even if no reviews, but with a message
-  // if (reviews.length === 0) {
-  //   return null;
-  // }
-
-  // Different illustration from WhyChooseUs, but still related to reviews/testimonials
   const illustrationUrl = 'https://illustrations.popsy.co/amber/testimonials.svg';
   const fallbackIllustration = 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=600&h=600&fit=crop&q=80';
 
@@ -118,115 +136,106 @@ const ReviewsCarousel = () => {
             </div>
           </motion.div>
 
-          {/* Reviews Carousel */}
+          {/* Reviews Swiper */}
           <div className="lg:col-span-3">
-            <div className="relative max-w-full mx-auto">
-          {/* Carousel Container */}
-          <div className="relative h-[400px] overflow-hidden">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentIndex}
-                initial={{ opacity: 0, x: 100 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -100 }}
-                transition={{ duration: 0.5 }}
-                className="absolute inset-0"
-              >
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-full">
-                  {reviews.length === 0 ? (
-                    <div className="col-span-3 flex items-center justify-center h-full">
-                      <p className="text-gray-500 text-lg">Chưa có đánh giá nào</p>
-                    </div>
-                  ) : (
-                    [0, 1, 2].map((offset) => {
-                      const reviewIndex = (currentIndex + offset) % reviews.length;
-                      const review = reviews[reviewIndex];
-                      if (!review) return null;
-
-                      return (
-                        <motion.div
-                          key={`${review.id}-${offset}`}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: offset * 0.1 }}
-                          className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow"
-                        >
-                          {/* Avatar & Name */}
-                          <div className="flex items-center gap-4 mb-4">
-                            <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold" style={{ background: 'linear-gradient(to bottom right, #0B033C, #6B46C1)' }}>
-                              {getInitials(review.student_name)}
-                            </div>
-                            <div>
-                              <h4 className="font-semibold" style={{ color: '#0B033C' }}>
-                                {review.student_name}
-                              </h4>
-                              <p className="text-sm text-gray-600">
-                                {review.course_title}
-                              </p>
-                            </div>
+            {reviews.length === 0 ? (
+              <div className="text-center py-12 bg-white rounded-2xl shadow-lg">
+                <p className="text-gray-500 text-lg mb-2">Chưa có đánh giá nào</p>
+                <p className="text-gray-400 text-sm">Hãy là người đầu tiên đánh giá khóa học!</p>
+              </div>
+            ) : (
+              <div className="review-slider-container">
+                <Swiper
+                  modules={[Navigation, Autoplay]}
+                  spaceBetween={24}
+                  loop={reviews.length >= 3}
+                  autoplay={{
+                    delay: 3000,
+                    disableOnInteraction: false,
+                    pauseOnMouseEnter: true,
+                  }}
+                  navigation={{
+                    prevEl: ".review-btn-prev",
+                    nextEl: ".review-btn-next",
+                  }}
+                  onSwiper={(swiper) => {
+                    swiperRef.current = swiper;
+                  }}
+                  breakpoints={{
+                    0: {
+                      slidesPerView: 1,
+                      spaceBetween: 16,
+                    },
+                    640: {
+                      slidesPerView: 1,
+                      spaceBetween: 16,
+                    },
+                    768: {
+                      slidesPerView: 2,
+                      spaceBetween: 20,
+                    },
+                    1024: {
+                      slidesPerView: 3,
+                      spaceBetween: 24,
+                    },
+                  }}
+                  className="reviews-swiper"
+                >
+                  {reviews.map((review) => (
+                    <SwiperSlide key={review.id}>
+                      <div className="review-card">
+                        {/* Avatar & Name */}
+                        <div className="review-header">
+                          <div className="avatar-circle">
+                            {getInitials(review.student_name)}
                           </div>
-
-                          {/* Rating */}
-                          <div className="mb-4">
-                            <StarRating rating={review.rating} readOnly size={20} />
+                          <div className="review-header-info">
+                            <strong className="review-student-name">
+                              {review.student_name || 'Anonymous'}
+                            </strong>
+                            <small className="review-course-title">
+                              {review.course_title || 'Khóa học'}
+                            </small>
                           </div>
+                        </div>
 
-                          {/* Comment */}
-                          <p className="text-gray-700 leading-relaxed">
+                        {/* Rating */}
+                        <div className="review-stars">
+                          <StarRating rating={review.rating} readOnly size={18} />
+                        </div>
+
+                        {/* Comment */}
+                        {review.comment ? (
+                          <p className="review-comment">
                             "{review.comment}"
                           </p>
-                        </motion.div>
-                      );
-                    })
-                  )}
+                        ) : (
+                          <p className="review-comment text-gray-400 italic">
+                            Không có bình luận
+                          </p>
+                        )}
+
+                        {/* Date */}
+                        {review.created_at && (
+                          <small className="review-date">
+                            {formatDistanceToNow(new Date(review.created_at), {
+                              addSuffix: true,
+                              locale: vi,
+                            })}
+                          </small>
+                        )}
+                      </div>
+                    </SwiperSlide>
+                  ))}
+                </Swiper>
+
+                {/* Navigation Buttons */}
+                <div className="review-nav">
+                  <button className="review-btn-prev arrow-btn">‹</button>
+                  <button className="review-btn-next arrow-btn">›</button>
                 </div>
-              </motion.div>
-            </AnimatePresence>
-          </div>
-
-          {/* Navigation Arrows - Only show if more than 3 reviews */}
-          {reviews.length > 3 && (
-            <>
-              <button
-                onClick={goToPrevious}
-                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 w-12 h-12 rounded-full bg-white shadow-lg flex items-center justify-center hover:bg-gray-50 transition-colors z-10"
-                style={{ color: '#0B033C' }}
-                aria-label="Previous review"
-              >
-                <FiChevronLeft className="text-xl" />
-              </button>
-              <button
-                onClick={goToNext}
-                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 w-12 h-12 rounded-full bg-white shadow-lg flex items-center justify-center hover:bg-gray-50 transition-colors z-10"
-                style={{ color: '#0B033C' }}
-                aria-label="Next review"
-              >
-                <FiChevronRight className="text-xl" />
-              </button>
-            </>
-          )}
-
-          {/* Dots Indicator - Only show if more than 3 reviews */}
-          {reviews.length > 3 && (
-            <div className="flex justify-center gap-2 mt-8">
-              {reviews.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentIndex(index)}
-                  className={`w-2 h-2 rounded-full transition-all ${
-                    index === currentIndex
-                      ? 'w-8'
-                      : 'bg-gray-300'
-                  }`}
-                  style={{
-                    backgroundColor: index === currentIndex ? '#0B033C' : '#CBD5E1'
-                  }}
-                  aria-label={`Go to review ${index + 1}`}
-                />
-              ))}
-            </div>
-          )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -235,4 +244,3 @@ const ReviewsCarousel = () => {
 };
 
 export default ReviewsCarousel;
-

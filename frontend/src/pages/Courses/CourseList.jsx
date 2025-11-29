@@ -6,6 +6,7 @@ import { publicApi } from '../../api/publicApi';
 import useDebounce from '../../hooks/useDebounce';
 import SkeletonCard from '../../components/SkeletonCard';
 import { formatPrice } from '../../utils/formatPrice';
+import { getCourseImage } from '../../utils/getCourseImage';
 
 const CourseList = () => {
   const [courses, setCourses] = useState([]);
@@ -92,18 +93,25 @@ const CourseList = () => {
                 whileHover={{ y: -8 }}
                 className="bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group"
               >
-                {course.featured_img && (
-                  <div className="relative h-48 overflow-hidden">
-                    <img
-                      src={course.featured_img}
-                      alt={course.title}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                    />
-                    <div className="absolute top-4 right-4 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold text-indigo-600 dark:text-indigo-400">
+                <div className="relative h-48 overflow-hidden">
+                  <div
+                    className="w-full h-full absolute inset-0"
+                    style={{
+                      backgroundImage: `url('${getCourseImage(course.id)}')`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      backgroundRepeat: 'no-repeat'
+                    }}
+                  >
+                    {/* Dark overlay nhẹ để text dễ đọc */}
+                    <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-all duration-500"></div>
+                  </div>
+                  {course.level && (
+                    <div className="absolute top-4 right-4 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold text-indigo-600 dark:text-indigo-400 z-10">
                       {course.level}
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
                 <div className="p-6">
                   <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2 line-clamp-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                     {course.title}
