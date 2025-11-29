@@ -10,8 +10,25 @@ from .option_serializer import OptionSerializer
 from .enrollment_serializer import EnrollmentSerializer
 from .quiz_attempt_serializer import QuizAttemptSerializer
 from .student_progress_serializer import StudentProgressSerializer
+from .teacher_progress_serializer import (
+    TeacherStudentProgressSerializer,
+    StudentDetailProgressSerializer,
+    ChapterProgressDetailSerializer,
+    CourseAnalyticsSerializer
+)
 from .order_serializer import OrderSerializer
 from .review_serializer import ReviewSerializer
+from .message_serializer import (
+    ConversationSerializer,
+    MessageSerializer,
+    CreateMessageSerializer,
+    StartPrivateChatSerializer,
+    BroadcastMessageSerializer
+)
+from .notification_serializer import (
+    NotificationSerializer,
+    MarkNotificationReadSerializer
+)
 
 __all__ = [
     'TeacherSerializer',
@@ -26,8 +43,19 @@ __all__ = [
     'EnrollmentSerializer',
     'QuizAttemptSerializer',
     'StudentProgressSerializer',
+    'TeacherStudentProgressSerializer',
+    'StudentDetailProgressSerializer',
+    'ChapterProgressDetailSerializer',
+    'CourseAnalyticsSerializer',
     'OrderSerializer',
     'ReviewSerializer',
+    'ConversationSerializer',
+    'MessageSerializer',
+    'CreateMessageSerializer',
+    'StartPrivateChatSerializer',
+    'BroadcastMessageSerializer',
+    'NotificationSerializer',
+    'MarkNotificationReadSerializer',
 ]
 
 

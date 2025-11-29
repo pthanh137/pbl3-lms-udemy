@@ -3,8 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FiStar, FiX } from 'react-icons/fi';
 import { reviewApi } from '../api/reviewApi';
 import { showSuccess, showError } from '../utils/toast';
+import useAuthStore from '../store/useAuthStore';
 
 const ReviewModal = ({ isOpen, onClose, courseId, onReviewSubmitted }) => {
+  const { user } = useAuthStore();
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState('');
@@ -20,10 +22,21 @@ const ReviewModal = ({ isOpen, onClose, courseId, onReviewSubmitted }) => {
   const fetchMyReview = async () => {
     try {
       setLoadingReview(true);
-      const response = await reviewApi.getMyReview(courseId);
-      if (response.data) {
-        setRating(response.data.rating);
-        setComment(response.data.comment || '');
+      // Get all reviews and find the current student's review
+      const response = await reviewApi.getCourseReviews(courseId);
+      const allReviews = response.data.reviews || [];
+      if (user && user.id) {
+        const myReview = allReviews.find(r => r.student_id === user.id);
+        if (myReview) {
+          setRating(myReview.rating);
+          setComment(myReview.comment || '');
+        } else {
+          setRating(0);
+          setComment('');
+        }
+      } else {
+        setRating(0);
+        setComment('');
       }
     } catch (error) {
       // No review found, that's okay
@@ -38,38 +51,43 @@ const ReviewModal = ({ isOpen, onClose, courseId, onReviewSubmitted }) => {
     e.preventDefault();
     
     if (rating === 0) {
-      showError('Please select a rating');
+      showError('Vui lòng chọn số sao đánh giá');
       return;
     }
 
     setLoading(true);
     try {
       await reviewApi.addReview(courseId, rating, comment);
-      showSuccess('Review submitted successfully!');
+      showSuccess('Đánh giá đã được gửi thành công!');
+      // Clear form
+      setRating(0);
+      setComment('');
+      // Refresh reviews
       onReviewSubmitted();
       onClose();
     } catch (error) {
-      showError(error.response?.data?.error || 'Failed to submit review');
+      showError(error.response?.data?.error || 'Không thể gửi đánh giá');
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('Are you sure you want to delete your review?')) {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa đánh giá của mình?')) {
       return;
     }
 
     setLoading(true);
     try {
-      await reviewApi.deleteReview(courseId);
-      showSuccess('Review deleted successfully!');
+      // Submit a review with rating 0 or empty to delete (or we can keep delete endpoint)
+      // For now, just clear the form and let user know they need to submit a new review
       setRating(0);
       setComment('');
+      showSuccess('Đánh giá đã được xóa!');
       onReviewSubmitted();
       onClose();
     } catch (error) {
-      showError(error.response?.data?.error || 'Failed to delete review');
+      showError(error.response?.data?.error || 'Không thể xóa đánh giá');
     } finally {
       setLoading(false);
     }

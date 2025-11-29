@@ -7,7 +7,7 @@ from rest_framework.views import APIView
 from django.db.models import Q
 from lms.models import (
     Student, Course, Enrollment, Quiz, Question, Option, QuizAttempt,
-    Lesson, StudentProgress
+    Lesson, StudentProgress, StudentCourseProgress
 )
 from lms.serializers import (
     EnrollmentSerializer, CourseSerializer, QuizSerializer,
@@ -406,12 +406,42 @@ class StudentLessonProgressView(APIView):
             progress.completed = completed
             progress.save()
         
-        # Check if all lessons in the course are completed
+        # Recalculate overall course progress
         course = lesson.section.course
         all_lessons = Lesson.objects.filter(section__course=course)
         total_lessons = all_lessons.count()
         
         if total_lessons > 0:
+            # Calculate progress for each lesson
+            lesson_progresses = []
+            for lesson_item in all_lessons:
+                try:
+                    lesson_progress = StudentProgress.objects.get(
+                        student=student,
+                        lesson=lesson_item
+                    )
+                    if lesson_item.duration_seconds and lesson_item.duration_seconds > 0:
+                        progress_percent = min(100, (lesson_progress.watched_seconds / lesson_item.duration_seconds) * 100)
+                    else:
+                        progress_percent = 100 if lesson_progress.completed else 0
+                except StudentProgress.DoesNotExist:
+                    progress_percent = 0
+                lesson_progresses.append(progress_percent)
+            
+            # Calculate overall progress as average of all lessons
+            overall_progress = sum(lesson_progresses) / len(lesson_progresses) if lesson_progresses else 0
+            
+            # Update or create StudentCourseProgress
+            course_progress, _ = StudentCourseProgress.objects.get_or_create(
+                student=student,
+                course=course,
+                defaults={'overall_progress': overall_progress}
+            )
+            course_progress.overall_progress = overall_progress
+            course_progress.last_access = timezone.now()
+            course_progress.save()
+            
+            # Check if all lessons are completed
             completed_lessons = StudentProgress.objects.filter(
                 student=student,
                 lesson__section__course=course,

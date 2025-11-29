@@ -1,5 +1,6 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
 import {
   FiHome,
   FiBook,
@@ -8,14 +9,36 @@ import {
   FiLock,
   FiLogOut,
   FiBarChart2,
+  FiUsers,
+  FiMessageCircle,
 } from 'react-icons/fi';
 import useAuthStore from '../store/useAuthStore';
+import { messageApi } from '../api/messageApi';
 import Swal from 'sweetalert2';
 
+// Teacher Sidebar Component
 const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { logout } = useAuthStore();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Fetch unread count every 10 seconds (for teachers)
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      try {
+        const response = await messageApi.getTeacherUnreadCount();
+        setUnreadCount(response.data.unread_total || response.data.unread_count || 0);
+      } catch (error) {
+        console.error('Error fetching unread count:', error);
+      }
+    };
+
+    fetchUnreadCount();
+    const interval = setInterval(fetchUnreadCount, 10000); // Every 10 seconds
+
+    return () => clearInterval(interval);
+  }, []);
 
   const handleLogout = async () => {
     const result = await Swal.fire({
@@ -61,6 +84,21 @@ const Sidebar = () => {
       label: 'Quản lý khóa học', 
       path: '/teacher/courses',
       exact: true
+    },
+    { 
+      icon: FiUsers, 
+      label: 'Theo dõi tiến độ học viên', 
+      path: '/teacher/student-progress',
+      exact: false,
+      matchPattern: (path) => path.startsWith('/teacher/course/') && path.includes('/students')
+    },
+    { 
+      icon: FiMessageCircle, 
+      label: 'Tin nhắn', 
+      path: '/teacher/messages',
+      exact: false,
+      matchPattern: (path) => path.startsWith('/teacher/messages') || path.startsWith('/messages/'),
+      badge: unreadCount > 0 ? unreadCount : null
     },
     { 
       icon: FiUser, 
@@ -137,7 +175,14 @@ const Sidebar = () => {
                   }}
                 >
                   <Icon className="text-lg" />
-                  <span className="font-medium">{item.label}</span>
+                  <span className="font-medium">
+                    {item.badge && item.badge > 0 ? `${item.label} (${item.badge > 99 ? '99+' : item.badge})` : item.label}
+                  </span>
+                  {item.badge && item.badge > 0 && (
+                    <span className="ml-auto bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                      {item.badge > 99 ? '99+' : item.badge}
+                    </span>
+                  )}
                 </Link>
               </motion.div>
             );

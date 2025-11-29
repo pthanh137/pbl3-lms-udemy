@@ -10,9 +10,13 @@ from .option import Option
 from .enrollment import Enrollment
 from .quiz_attempt import QuizAttempt
 from .student_progress import StudentProgress
+from .student_course_progress import StudentCourseProgress
 from .order import Order
 from .review import Review
 from .certificate import Certificate
+from .conversation import Conversation
+from .message import Message
+from .notification import Notification
 
 __all__ = [
     'Teacher',
@@ -27,9 +31,13 @@ __all__ = [
     'Enrollment',
     'QuizAttempt',
     'StudentProgress',
+    'StudentCourseProgress',
     'Order',
     'Review',
     'Certificate',
+    'Conversation',
+    'Message',
+    'Notification',
 ]
 
 

@@ -1,28 +1,27 @@
 import axiosClient from './axiosClient';
 
 export const reviewApi = {
-  // Add or update a review
+  // Add or update a review (NEW ENDPOINT)
   addReview: (courseId, rating, comment) => {
-    return axiosClient.post('reviews/add/', {
-      course_id: courseId,
+    return axiosClient.post(`courses/${courseId}/review/`, {
       rating: rating,
       comment: comment || '',
     });
   },
 
-  // Get all reviews for a course
+  // Get all reviews for a course (NEW ENDPOINT)
   getCourseReviews: (courseId) => {
-    return axiosClient.get(`reviews/course/${courseId}/`);
+    return axiosClient.get(`courses/${courseId}/reviews/`);
   },
 
-  // Get current student's review for a course
-  getMyReview: (courseId) => {
-    return axiosClient.get(`reviews/my/${courseId}/`);
+  // Get rating summary (NEW ENDPOINT)
+  getRatingSummary: (courseId) => {
+    return axiosClient.get(`courses/${courseId}/rating_summary/`);
   },
 
-  // Delete current student's review
-  deleteReview: (courseId) => {
-    return axiosClient.delete(`reviews/delete/${courseId}/`);
+  // Get highlight reviews for homepage (keep old endpoint)
+  getHighlightReviews: () => {
+    return axiosClient.get('reviews/highlight/');
   },
 };
 

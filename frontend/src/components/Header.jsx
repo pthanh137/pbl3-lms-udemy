@@ -1,9 +1,12 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FiUser, FiLogOut, FiMenu, FiX, FiSun, FiMoon, FiSearch } from 'react-icons/fi';
+import { FiUser, FiLogOut, FiMenu, FiX, FiSun, FiMoon, FiSearch, FiMessageCircle } from 'react-icons/fi';
 import useAuthStore from '../store/useAuthStore';
 import useThemeStore from '../store/useThemeStore';
+import { messageApi } from '../api/messageApi';
+import { notificationApi } from '../api/notificationApi';
+import NotificationBell from './NotificationBell';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -12,6 +15,8 @@ const Header = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notificationUnreadTotal, setNotificationUnreadTotal] = useState(0);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -20,6 +25,29 @@ const Header = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Fetch unread count every 10 seconds (for students)
+  useEffect(() => {
+    if (role === 'student') {
+      const fetchUnreadCount = async () => {
+        try {
+          const [messageResponse, notificationResponse] = await Promise.all([
+            messageApi.getUnreadCount(),
+            notificationApi.getUnreadCount(),
+          ]);
+          setUnreadCount(messageResponse.data.unread_total || 0);
+          setNotificationUnreadTotal(notificationResponse.data.unread_total || 0);
+        } catch (error) {
+          console.error('Error fetching unread count:', error);
+        }
+      };
+
+      fetchUnreadCount();
+      const interval = setInterval(fetchUnreadCount, 10000); // Every 10 seconds
+
+      return () => clearInterval(interval);
+    }
+  }, [role]);
 
   const handleLogout = () => {
     logout();
@@ -91,6 +119,11 @@ const Header = () => {
             >
               Khóa học
             </Link>
+
+            {/* Notification Bell (for students only) */}
+            {role === 'student' && (
+              <NotificationBell />
+            )}
 
             {/* Theme Toggle */}
             <button
@@ -178,6 +211,18 @@ const Header = () => {
                     <FiUser className="text-indigo-600" />
                     <span>Bảng điều khiển</span>
                   </Link>
+                  <Link
+                    to={role === 'student' ? '/student/messages' : '/teacher/messages'}
+                    className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-700 relative"
+                  >
+                    <FiMessageCircle className="text-indigo-600" />
+                    <span>Tin nhắn</span>
+                    {role === 'student' && unreadCount > 0 && (
+                      <span className="ml-auto bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </span>
+                    )}
+                  </Link>
                   <button
                     onClick={handleLogout}
                     className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-700 rounded-b-lg"
@@ -258,6 +303,34 @@ const Header = () => {
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Bảng điều khiển
+                </Link>
+                {role === 'student' && (
+                  <Link
+                    to="/student/notifications"
+                    className="flex items-center space-x-2 px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-700 rounded-lg"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <FiBell className="text-indigo-600" />
+                    <span>Thông báo</span>
+                    {notificationUnreadTotal > 0 && (
+                      <span className="ml-auto bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                        {notificationUnreadTotal > 99 ? '99+' : notificationUnreadTotal}
+                      </span>
+                    )}
+                  </Link>
+                )}
+                <Link
+                  to={role === 'student' ? '/student/messages' : '/teacher/messages'}
+                  className="flex items-center space-x-2 px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-700 rounded-lg"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <FiMessageCircle className="text-indigo-600" />
+                  <span>Tin nhắn</span>
+                  {role === 'student' && unreadCount > 0 && (
+                    <span className="ml-auto bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
                 </Link>
                 <button
                   onClick={handleLogout}

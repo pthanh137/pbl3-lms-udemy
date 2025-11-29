@@ -40,8 +40,15 @@ const Options = React.lazy(() => import('./pages/Teacher/Options'));
 const ProfileSettings = React.lazy(() => import('./pages/Teacher/ProfileSettings'));
 const ChangePassword = React.lazy(() => import('./pages/Teacher/ChangePassword'));
 const AnalyticsDashboard = React.lazy(() => import('./pages/Teacher/AnalyticsDashboard'));
+const StudentProgress = React.lazy(() => import('./pages/Teacher/StudentProgress'));
+const CourseStudents = React.lazy(() => import('./pages/Teacher/CourseStudents'));
+const StudentDetail = React.lazy(() => import('./pages/Teacher/StudentDetail'));
+const CourseProgressAnalytics = React.lazy(() => import('./pages/Teacher/CourseProgressAnalytics'));
+const MessagesPage = React.lazy(() => import('./pages/Messages/MessagesPage'));
+const TeacherMessages = React.lazy(() => import('./pages/Teacher/Messages'));
 const MyCertificates = React.lazy(() => import('./pages/Student/MyCertificates'));
 const CertificateDetail = React.lazy(() => import('./pages/Student/CertificateDetail'));
+const StudentNotifications = React.lazy(() => import('./pages/Student/Notifications'));
 
 function App() {
   const { theme, setTheme } = useThemeStore();
@@ -210,6 +217,22 @@ function App() {
               </Suspense>
             }
           />
+          <Route
+            path="messages"
+            element={
+              <Suspense fallback={<SkeletonBlock />}>
+                <MessagesPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="notifications"
+            element={
+              <Suspense fallback={<SkeletonBlock />}>
+                <StudentNotifications />
+              </Suspense>
+            }
+          />
         </Route>
 
         {/* Teacher routes */}
@@ -297,6 +320,38 @@ function App() {
             }
           />
           <Route
+            path="student-progress"
+            element={
+              <Suspense fallback={<SkeletonBlock />}>
+                <StudentProgress />
+              </Suspense>
+            }
+          />
+          <Route
+            path="course/:id/students"
+            element={
+              <Suspense fallback={<SkeletonBlock />}>
+                <CourseStudents />
+              </Suspense>
+            }
+          />
+          <Route
+            path="course/:id/student/:studentId"
+            element={
+              <Suspense fallback={<SkeletonBlock />}>
+                <StudentDetail />
+              </Suspense>
+            }
+          />
+          <Route
+            path="course/:id/analytics"
+            element={
+              <Suspense fallback={<SkeletonBlock />}>
+                <CourseProgressAnalytics />
+              </Suspense>
+            }
+          />
+          <Route
             path="lessons"
             element={
               <Suspense fallback={<SkeletonBlock />}>
@@ -357,6 +412,14 @@ function App() {
             element={
               <Suspense fallback={<SkeletonBlock />}>
                 <ChangePassword />
+              </Suspense>
+            }
+          />
+          <Route
+            path="messages"
+            element={
+              <Suspense fallback={<SkeletonBlock />}>
+                <TeacherMessages />
               </Suspense>
             }
           />

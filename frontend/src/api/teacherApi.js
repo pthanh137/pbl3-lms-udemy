@@ -162,6 +162,19 @@ export const teacherApi = {
   changePassword: (data) => {
     return axiosClient.post('teacher/change-password/', data);
   },
+
+  // Student Progress Tracking
+  getCourseStudents: (courseId, params = {}) => {
+    return axiosClient.get(`teacher/courses/${courseId}/students/`, { params });
+  },
+
+  getStudentDetail: (courseId, studentId) => {
+    return axiosClient.get(`teacher/courses/${courseId}/students/${studentId}/detail/`);
+  },
+
+  getCourseAnalytics: (courseId) => {
+    return axiosClient.get(`teacher/courses/${courseId}/analytics/`);
+  },
 };
 
 

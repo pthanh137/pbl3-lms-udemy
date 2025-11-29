@@ -49,9 +49,16 @@ const TeacherLogin = () => {
         user: store.user
       });
 
+      // Check role and redirect immediately
+      if (store.role === 'teacher') {
+        showSuccess('Đăng nhập thành công!');
+        navigate('/teacher/dashboard');
+        return;
+      }
+
       showSuccess('Login successful!');
       
-      // Wait a bit longer to ensure persistence
+      // Fallback redirect
       setTimeout(() => {
         navigate('/teacher/dashboard');
       }, 300);

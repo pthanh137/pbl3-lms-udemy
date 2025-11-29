@@ -1,34 +1,15 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiStar, FiUsers, FiEye, FiBook } from 'react-icons/fi';
+import { FiUsers, FiEye, FiBook } from 'react-icons/fi';
 import { formatPrice } from '../../utils/formatPrice';
 import { getImageUrl } from '../../utils/imageUtils';
+import StarRating from '../StarRating';
 
 const PopularCourses = ({ courses }) => {
   if (!courses || courses.length === 0) {
     return null;
   }
 
-  const renderStars = (rating) => {
-    const fullStars = Math.floor(rating);
-    return (
-      <div className="flex items-center gap-1">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <FiStar
-            key={star}
-            className={`text-sm ${
-              star <= fullStars
-                ? 'text-yellow-400 fill-yellow-400'
-                : 'text-gray-300 dark:text-gray-600'
-            }`}
-          />
-        ))}
-        <span className="ml-1 text-sm text-gray-600 dark:text-gray-400">
-          {rating > 0 ? rating.toFixed(1) : 'N/A'}
-        </span>
-      </div>
-    );
-  };
 
   return (
     <section className="py-20 bg-white dark:bg-gray-900">
@@ -118,10 +99,13 @@ const PopularCourses = ({ courses }) => {
                   {/* Rating & Stats */}
                   <div className="flex items-center gap-4 mb-4">
                     {course.average_rating > 0 && (
-                      <div className="flex items-center gap-1">
-                        {renderStars(course.average_rating)}
-                        <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">
-                          ({course.total_reviews || 0})
+                      <div className="flex items-center gap-2">
+                        <StarRating rating={Math.round(course.average_rating)} readOnly size={16} />
+                        <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                          {course.average_rating.toFixed(1)}
+                        </span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          ({course.total_reviews || 0} đánh giá)
                         </span>
                       </div>
                     )}

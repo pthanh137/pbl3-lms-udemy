@@ -6,14 +6,23 @@ class ReviewSerializer(serializers.ModelSerializer):
     student_name = serializers.CharField(source='student.full_name', read_only=True)
     student_id = serializers.IntegerField(source='student.id', read_only=True)
     course_title = serializers.CharField(source='course.title', read_only=True)
+    course = serializers.SerializerMethodField()
     
     class Meta:
         model = Review
         fields = [
             'id', 'course', 'student', 'student_id', 'student_name',
-            'rating', 'comment', 'created_at', 'updated_at'
+            'rating', 'comment', 'created_at', 'updated_at', 'course_title'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
+    
+    def get_course(self, obj):
+        """Include course info for highlight reviews"""
+        return {
+            'id': obj.course.id,
+            'title': obj.course.title,
+            'thumbnail': obj.course.featured_img.url if obj.course.featured_img else None
+        }
 
 
 class ReviewCreateSerializer(serializers.Serializer):

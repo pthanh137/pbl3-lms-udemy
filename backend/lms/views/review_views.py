@@ -200,3 +200,59 @@ class DeleteReviewView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
+
+class RatingSummaryView(APIView):
+    """
+    Get rating summary for a course.
+    GET /api/reviews/course/<course_id>/rating_summary/
+    """
+    permission_classes = []  # Public endpoint
+
+    def get(self, request, course_id):
+        try:
+            course = Course.objects.get(id=course_id)
+        except Course.DoesNotExist:
+            return Response(
+                {'error': 'Course not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Calculate star distribution
+        reviews = Review.objects.filter(course=course)
+        star_counts = {5: 0, 4: 0, 3: 0, 2: 0, 1: 0}
+        
+        for review in reviews:
+            if review.rating in star_counts:
+                star_counts[review.rating] += 1
+
+        return Response({
+            'average': course.average_rating or 0,
+            'total_reviews': course.total_reviews or 0,
+            'stars': star_counts
+        }, status=status.HTTP_200_OK)
+
+
+class HighlightReviewsView(APIView):
+    """
+    Get highlighted reviews for homepage.
+    GET /api/reviews/highlight/
+    """
+    permission_classes = []  # Public endpoint
+
+    def get(self, request):
+        # First try to get 4+ star reviews
+        reviews = Review.objects.select_related('course', 'student').filter(
+            rating__gte=4
+        ).order_by('-rating', '-created_at')[:6]
+        
+        # If not enough 4+ star reviews, get latest reviews regardless of rating
+        if reviews.count() < 6:
+            all_reviews = Review.objects.select_related('course', 'student').order_by('-created_at')[:6]
+            # Combine and deduplicate
+            review_ids = list(reviews.values_list('id', flat=True))
+            additional_reviews = all_reviews.exclude(id__in=review_ids)[:6 - reviews.count()]
+            reviews = list(reviews) + list(additional_reviews)
+
+        serializer = ReviewSerializer(reviews, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+

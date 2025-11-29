@@ -11,11 +11,12 @@ import { showSuccess, showError, showInfo } from '../../utils/toast';
 import { formatPrice } from '../../utils/formatPrice';
 import SkeletonBlock from '../../components/SkeletonBlock';
 import ReviewModal from '../../components/ReviewModal';
+import StarRating from '../../components/StarRating';
 
 const CourseDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { role } = useAuthStore();
+  const { role, user } = useAuthStore();
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
@@ -26,6 +27,8 @@ const CourseDetail = () => {
   const [loadingReviews, setLoadingReviews] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [myReview, setMyReview] = useState(null);
+  const [ratingSummary, setRatingSummary] = useState(null);
+  const [loadingSummary, setLoadingSummary] = useState(false);
 
   useEffect(() => {
     const fetchCourse = async () => {
@@ -41,10 +44,15 @@ const CourseDetail = () => {
     };
     fetchCourse();
     fetchReviews();
-    if (role === 'student') {
+  }, [id]);
+
+  useEffect(() => {
+    if (isEnrolled && role === 'student') {
       fetchMyReview();
+    } else {
+      setMyReview(null);
     }
-  }, [id, role]);
+  }, [id, isEnrolled, role]);
 
   useEffect(() => {
     const checkEnrollment = async () => {
@@ -56,13 +64,16 @@ const CourseDetail = () => {
         const response = await studentApi.getMyCourses();
         const enrolledCourses = response.data.results || response.data || [];
         const courseId = parseInt(id);
+        
+        // Fix enrollment check - properly compare course IDs
         const enrolled = enrolledCourses.some((enrollment) => {
-          // Handle different response formats
-          if (enrollment.course) {
-            return enrollment.course.id === courseId || enrollment.course === courseId;
-          }
-          return enrollment.course_id === courseId;
+          const enrollmentCourseId = enrollment.course 
+            ? (typeof enrollment.course === 'object' ? enrollment.course.id : enrollment.course)
+            : enrollment.course_id;
+          
+          return Number(enrollmentCourseId) === Number(courseId);
         });
+        
         setIsEnrolled(enrolled);
       } catch (error) {
         console.error('Error checking enrollment:', error);
@@ -77,14 +88,18 @@ const CourseDetail = () => {
   const fetchReviews = async () => {
     try {
       setLoadingReviews(true);
-      const response = await reviewApi.getCourseReviews(id);
-      setReviews(response.data.reviews || []);
-      // Update course rating if available
-      if (response.data.average_rating !== undefined) {
+      const [reviewsResponse, summaryResponse] = await Promise.all([
+        reviewApi.getCourseReviews(id),
+        reviewApi.getRatingSummary(id).catch(() => null)
+      ]);
+      setReviews(reviewsResponse.data.reviews || []);
+      if (summaryResponse) {
+        setRatingSummary(summaryResponse.data);
+        // Update course rating from summary
         setCourse(prev => prev ? {
           ...prev,
-          average_rating: response.data.average_rating,
-          total_reviews: response.data.total_reviews
+          average_rating: summaryResponse.data.average,
+          total_reviews: summaryResponse.data.total_reviews
         } : null);
       }
     } catch (error) {
@@ -95,22 +110,38 @@ const CourseDetail = () => {
   };
 
   const fetchMyReview = async () => {
+    if (!isEnrolled || role !== 'student') {
+      setMyReview(null);
+      return;
+    }
     try {
-      const response = await reviewApi.getMyReview(id);
-      setMyReview(response.data);
+      // Get all reviews and find the current student's review
+      const response = await reviewApi.getCourseReviews(id);
+      const allReviews = response.data.reviews || [];
+      // Find review by current student
+      if (user && user.id) {
+        const myReview = allReviews.find(r => r.student_id === user.id);
+        setMyReview(myReview || null);
+      } else {
+        setMyReview(null);
+      }
     } catch (error) {
       // No review found, that's okay
       setMyReview(null);
     }
   };
 
-  const handleReviewSubmitted = () => {
-    fetchReviews();
-    fetchMyReview();
+  const handleReviewSubmitted = async () => {
+    // Refresh reviews and rating summary
+    await fetchReviews();
+    await fetchMyReview();
     // Refresh course to get updated rating
-    publicApi.getCourseContent(id).then(response => {
+    try {
+      const response = await publicApi.getCourseContent(id);
       setCourse(response.data);
-    });
+    } catch (error) {
+      console.error('Error refreshing course:', error);
+    }
   };
 
   const handleBuyNow = async () => {
@@ -128,23 +159,6 @@ const CourseDetail = () => {
       showError(error.response?.data?.error || 'Failed to create order');
       setEnrolling(false);
     }
-  };
-
-  const renderStars = (rating) => {
-    return (
-      <div className="flex items-center gap-1">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <FiStar
-            key={star}
-            className={`${
-              star <= rating
-                ? 'text-yellow-400 fill-yellow-400'
-                : 'text-gray-300 dark:text-gray-600'
-            }`}
-          />
-        ))}
-      </div>
-    );
   };
 
   if (loading) {
@@ -182,7 +196,7 @@ const CourseDetail = () => {
               </div>
               {course.average_rating > 0 && (
                 <div className="flex items-center space-x-2">
-                  <FiStar className="text-lg text-yellow-400 fill-yellow-400" />
+                  <StarRating rating={Math.round(course.average_rating)} readOnly size={18} />
                   <span>{course.average_rating.toFixed(1)} ({course.total_reviews || 0})</span>
                 </div>
               )}
@@ -393,7 +407,7 @@ const CourseDetail = () => {
                           {course.average_rating > 0 ? (
                             <>
                               <div className="flex items-center gap-2">
-                                {renderStars(Math.round(course.average_rating))}
+                                <StarRating rating={Math.round(course.average_rating)} readOnly size={28} />
                                 <span className="text-2xl font-bold text-gray-800 dark:text-white">
                                   {course.average_rating.toFixed(1)}
                                 </span>
@@ -409,7 +423,7 @@ const CourseDetail = () => {
                           )}
                         </div>
                       </div>
-                      {role === 'student' && isEnrolled && (
+                      {role === 'student' && !checkingEnrollment && isEnrolled && (
                         <motion.button
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
@@ -421,6 +435,40 @@ const CourseDetail = () => {
                         </motion.button>
                       )}
                     </div>
+
+                    {/* Rating Summary */}
+                    {ratingSummary && ratingSummary.total_reviews > 0 && (
+                      <div className="mb-6 p-6 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <h4 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">
+                          Phân bổ đánh giá
+                        </h4>
+                        <div className="space-y-2">
+                          {[5, 4, 3, 2, 1].map((star) => {
+                            const count = ratingSummary.stars[star] || 0;
+                            const percentage = ratingSummary.total_reviews > 0 
+                              ? (count / ratingSummary.total_reviews) * 100 
+                              : 0;
+                            return (
+                              <div key={star} className="flex items-center gap-3">
+                                <div className="flex items-center gap-1 w-20">
+                                  <span className="text-sm text-gray-600 dark:text-gray-400">{star}</span>
+                                  <FiStar className="text-yellow-400 fill-yellow-400 text-sm" />
+                                </div>
+                                <div className="flex-1 bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                                  <div
+                                    className="bg-yellow-400 h-2 rounded-full transition-all"
+                                    style={{ width: `${percentage}%` }}
+                                  />
+                                </div>
+                                <span className="text-sm text-gray-600 dark:text-gray-400 w-12 text-right">
+                                  {count}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
 
                     {loadingReviews ? (
                       <div className="text-center py-8">
@@ -452,8 +500,8 @@ const CourseDetail = () => {
                                   <h4 className="font-semibold text-gray-800 dark:text-white">
                                     {review.student_name || 'Anonymous'}
                                   </h4>
-                                  <div className="flex items-center gap-2 mt-1">
-                                    {renderStars(review.rating)}
+                                  <div className="mt-1">
+                                    <StarRating rating={review.rating} readOnly size={16} />
                                   </div>
                                 </div>
                               </div>

@@ -1,31 +1,11 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiStar, FiUser, FiBook } from 'react-icons/fi';
+import { FiUser, FiBook } from 'react-icons/fi';
 import { formatPrice } from '../utils/formatPrice';
 import { getImageUrl } from '../utils/imageUtils';
+import StarRating from './StarRating';
 
 const CourseCard = ({ course }) => {
-  const renderStars = (rating) => {
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 >= 0.5;
-    
-    return (
-      <div className="flex items-center gap-1">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <FiStar
-            key={star}
-            className={`text-sm ${
-              star <= fullStars
-                ? 'text-yellow-400 fill-yellow-400'
-                : star === fullStars + 1 && hasHalfStar
-                ? 'text-yellow-400 fill-yellow-400 opacity-50'
-                : 'text-gray-300 dark:text-gray-600'
-            }`}
-          />
-        ))}
-      </div>
-    );
-  };
 
   const finalPrice = course.discount_price || course.price;
   const originalPrice = course.discount_price ? course.price : null;
@@ -88,12 +68,12 @@ const CourseCard = ({ course }) => {
           {/* Rating */}
           {course.average_rating > 0 && (
             <div className="flex items-center gap-2 mb-3">
-              {renderStars(course.average_rating)}
+              <StarRating rating={Math.round(course.average_rating)} readOnly size={16} />
               <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                 {course.average_rating.toFixed(1)}
               </span>
               <span className="text-xs text-gray-500 dark:text-gray-400">
-                ({course.total_reviews || 0})
+                ({course.total_reviews || 0} đánh giá)
               </span>
             </div>
           )}
